@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Tracker - Conteggio Calorie</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #1e293b;
+            --bg-card: #334155;
+            --text-light: #f1f5f9;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-light);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.5s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            animation: fadeInUp 0.5s ease;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .food-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .food-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .food-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .food-info {
+            flex: 1;
+        }
+
+        .food-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .food-macros {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .food-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+        }
+
+        .consumed-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .consumed-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quantity-input {
+            width: 80px;
+            margin-right: 10px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .search-box::placeholder {
+            color: var(--text-dim);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .reset-day-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🥗 Macro Tracker</h1>
+            <p>Gestisci i tuoi macro e conta le calorie giornaliere</p>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCalories">0</div>
+                <div class="stat-label">Calorie Totali</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalProtein">0g</div>
+                <div class="stat-label">Proteine</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalCarbs">0g</div>
+                <div class="stat-label">Carboidrati</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalFat">0g</div>
+                <div class="stat-label">Grassi</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="card">
+                <h2>📋 Database Alimenti</h2>
+                <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 10px;">Valori nutrizionali per 100g</p>
+                <input type="text" class="search-box" id="searchFood" placeholder="🔍 Cerca alimento..." onkeyup="window.searchFoods()">
+                <div class="food-list" id="foodList"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="window.openAddFoodModal()">
+                        + Aggiungi Nuovo Alimento
+                    </button>
+                    <button class="btn btn-warning btn-small" onclick="window.resetDatabase()" title="Ripristina database con valori crudo/cotto">
+                        🔄 Reset DB
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🍽️ Alimenti Consumati Oggi</h2>
+                <div class="consumed-list" id="consumedList"></div>
+                <button class="btn btn-success" onclick="window.openAddConsumedModal()">
+                    + Aggiungi Pasto
+                </button>
+            </div>
+        </div>
+
+        <button class="btn btn-danger reset-day-btn" onclick="window.resetDay()">
+            🔄 Reset Giornata
+        </button>
+    </div>
+
+    <!-- Modal Aggiungi/Modifica Alimento -->
+    <div class="modal" id="foodModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Aggiungi Alimento</h3>
+            </div>
+            <div class="input-group">
+                <label>Nome Alimento</label>
+                <input type="text" id="foodName" placeholder="es. Petto di pollo">
+            </div>
+            <div class="input-group">
+                <label>Stato Alimento</label>
+                <select id="foodState">
+                    <option value="">Seleziona stato</option>
+                    <option value="crudo">Crudo</option>
+                    <option value="cotto">Cotto</option>
+                    <option value="altro">Altro/Non applicabile</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Proteine (g per 100g)</label>
+                <input type="number" id="foodProtein" step="0.1" placeholder="0">
+            </div>
+            <div class="input-group">
+                <label>Carboidrati (g per 100g)</label>
+                <input type="number" id="foodCarbs" step="0.1" placeholder="0">
+            </div>
+            <div class="input-group">
+                <label>Grassi (g per 100g)</label>
+                <input type="number" id="foodFat" step="0.1" placeholder="0">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="window.saveFood()">Salva</button>
+                <button class="btn btn-danger" onclick="window.closeModal('foodModal')">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Aggiungi Consumo -->
+    <div class="modal" id="consumeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Aggiungi Pasto</h3>
+            </div>
+            <div class="input-group">
+                <label>Seleziona Alimento</label>
+                <select id="consumeFood" onchange="window.updateCaloriePreview()"></select>
+            </div>
+            <div class="input-group">
+                <label>Quantità (grammi)</label>
+                <input type="number" id="consumeQuantity" step="1" value="100" placeholder="100" onkeyup="window.updateCaloriePreview()" onchange="window.updateCaloriePreview()">
+            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="text-align: center; color: var(--text-dim);">Valore nutrizionale per questa quantità:</div>
+                <div id="caloriePreview" style="text-align: center; font-size: 1.2rem; font-weight: bold; margin-top: 5px;">-</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-success" onclick="window.addConsumed()">Aggiungi</button>
+                <button class="btn btn-danger" onclick="window.closeModal('consumeModal')">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variabili globali
+        let foodDatabase = [];
+        let consumedToday = [];
+        let editingFoodId = null;
+        let filteredFoods = [];
+
+        // Database alimenti predefinito completo
+        const defaultFoodDatabase = [
+            // Proteine - CRUDE
+            { id: 1, name: "Petto di pollo (crudo)", protein: 23, carbs: 0, fat: 2.6 },
+            { id: 2, name: "Petto di pollo (cotto)", protein: 31, carbs: 0, fat: 3.6 },
+            { id: 3, name: "Petto di tacchino (crudo)", protein: 24, carbs: 0, fat: 1 },
+            { id: 4, name: "Petto di tacchino (cotto)", protein: 29, carbs: 0, fat: 1 },
+            { id: 5, name: "Manzo magro (crudo)", protein: 21, carbs: 0, fat: 5 },
+            { id: 6, name: "Manzo magro (cotto)", protein: 26, carbs: 0, fat: 15 },
+            { id: 7, name: "Maiale magro (crudo)", protein: 21, carbs: 0, fat: 8 },
+            { id: 8, name: "Maiale magro (cotto)", protein: 27, carbs: 0, fat: 14 },
+            { id: 9, name: "Salmone (crudo)", protein: 20, carbs: 0, fat: 13 },
+            { id: 10, name: "Salmone (cotto)", protein: 25, carbs: 0, fat: 13 },
+            { id: 11, name: "Tonno al naturale", protein: 25, carbs: 0, fat: 1 },
+            { id: 12, name: "Merluzzo (crudo)", protein: 17, carbs: 0, fat: 0.7 },
+            { id: 13, name: "Merluzzo (cotto)", protein: 22, carbs: 0, fat: 0.9 },
+            { id: 14, name: "Uova intere (crude)", protein: 13, carbs: 1.1, fat: 11 },
+            { id: 15, name: "Uova intere (cotte)", protein: 13, carbs: 1.1, fat: 11 },
+            { id: 16, name: "Albume (crudo)", protein: 11, carbs: 0.7, fat: 0.2 },
+            { id: 17, name: "Albume (cotto)", protein: 11, carbs: 0.7, fat: 0.2 },
+            { id: 18, name: "Bresaola", protein: 32, carbs: 0, fat: 2 },
+            { id: 19, name: "Prosciutto crudo", protein: 26, carbs: 0, fat: 18 },
+            { id: 20, name: "Prosciutto cotto", protein: 20, carbs: 1, fat: 14 },
+            
+            // Carboidrati
+            { id: 21, name: "Pasta (cruda)", protein: 11, carbs: 75, fat: 1.5 },
+            { id: 22, name: "Pasta (cotta)", protein: 5, carbs: 31, fat: 0.9 },
+            { id: 23, name: "Riso bianco (crudo)", protein: 7, carbs: 80, fat: 0.7 },
+            { id: 24, name: "Riso bianco (cotto)", protein: 2.7, carbs: 28, fat: 0.3 },
+            { id: 25, name: "Riso integrale (crudo)", protein: 7.5, carbs: 77, fat: 2.7 },
+            { id: 26, name: "Riso integrale (cotto)", protein: 2.6, carbs: 23, fat: 0.9 },
+            { id: 27, name: "Pane bianco", protein: 8.8, carbs: 49, fat: 3.2 },
+            { id: 28, name: "Pane integrale", protein: 9, carbs: 41, fat: 3.4 },
+            { id: 29, name: "Patate (crude)", protein: 2, carbs: 17, fat: 0.1 },
+            { id: 30, name: "Patate (cotte)", protein: 2, carbs: 17, fat: 0.1 },
+            { id: 31, name: "Patate dolci (crude)", protein: 1.6, carbs: 20, fat: 0.1 },
+            { id: 32, name: "Patate dolci (cotte)", protein: 2, carbs: 20, fat: 0.1 },
+            { id: 33, name: "Avena (cruda)", protein: 17, carbs: 66, fat: 7 },
+            { id: 34, name: "Quinoa (cruda)", protein: 14, carbs: 64, fat: 6 },
+            { id: 35, name: "Quinoa (cotta)", protein: 4.4, carbs: 21, fat: 1.9 },
+            { id: 36, name: "Farro (crudo)", protein: 15, carbs: 70, fat: 2.5 },
+            { id: 37, name: "Farro (cotto)", protein: 5, carbs: 26, fat: 0.9 },
+            
+            // Latticini
+            { id: 38, name: "Latte intero", protein: 3.3, carbs: 4.8, fat: 3.7 },
+            { id: 39, name: "Latte scremato", protein: 3.4, carbs: 5, fat: 0.1 },
+            { id: 40, name: "Yogurt greco", protein: 10, carbs: 4, fat: 0.4 },
+            { id: 41, name: "Yogurt intero", protein: 3.5, carbs: 4.7, fat: 3.3 },
+            { id: 42, name: "Mozzarella", protein: 22, carbs: 2.2, fat: 22 },
+            { id: 43, name: "Parmigiano", protein: 33, carbs: 0, fat: 29 },
+            { id: 44, name: "Ricotta", protein: 11, carbs: 3, fat: 13 },
+            { id: 45, name: "Feta", protein: 14, carbs: 4, fat: 21 },
+            { id: 46, name: "Fiocchi di latte", protein: 11, carbs: 3.4, fat: 4.3 },
+            
+            // Frutta
+            { id: 47, name: "Banana", protein: 1.1, carbs: 23, fat: 0.3 },
+            { id: 48, name: "Mela", protein: 0.3, carbs: 14, fat: 0.2 },
+            { id: 49, name: "Arancia", protein: 0.9, carbs: 12, fat: 0.1 },
+            { id: 50, name: "Fragole", protein: 0.7, carbs: 8, fat: 0.3 },
+            { id: 51, name: "Mirtilli", protein: 0.7, carbs: 14, fat: 0.3 },
+            { id: 52, name: "Ananas", protein: 0.5, carbs: 13, fat: 0.1 },
+            { id: 53, name: "Kiwi", protein: 1.1, carbs: 15, fat: 0.5 },
+            { id: 54, name: "Uva", protein: 0.7, carbs: 17, fat: 0.2 },
+            { id: 55, name: "Pesca", protein: 0.9, carbs: 10, fat: 0.3 },
+            { id: 56, name: "Anguria", protein: 0.6, carbs: 8, fat: 0.2 },
+            
+            // Verdure
+            { id: 57, name: "Broccoli (crudi)", protein: 2.8, carbs: 7, fat: 0.4 },
+            { id: 58, name: "Broccoli (cotti)", protein: 2.4, carbs: 5, fat: 0.4 },
+            { id: 59, name: "Spinaci (crudi)", protein: 2.9, carbs: 3.6, fat: 0.4 },
+            { id: 60, name: "Spinaci (cotti)", protein: 2.9, carbs: 3.8, fat: 0.5 },
+            { id: 61, name: "Lattuga", protein: 1.4, carbs: 2.9, fat: 0.2 },
+            { id: 62, name: "Pomodori", protein: 0.9, carbs: 3.9, fat: 0.2 },
+            { id: 63, name: "Carote (crude)", protein: 0.9, carbs: 10, fat: 0.2 },
+            { id: 64, name: "Carote (cotte)", protein: 0.8, carbs: 8, fat: 0.2 },
+            { id: 65, name: "Zucchine (crude)", protein: 1.2, carbs: 3.1, fat: 0.3 },
+            { id: 66, name: "Zucchine (cotte)", protein: 1.1, carbs: 2.7, fat: 0.4 },
+            { id: 67, name: "Peperoni", protein: 1, carbs: 6, fat: 0.3 },
+            { id: 68, name: "Cetrioli", protein: 0.7, carbs: 3.6, fat: 0.1 },
+            { id: 69, name: "Melanzane (crude)", protein: 1, carbs: 6, fat: 0.2 },
+            { id: 70, name: "Melanzane (cotte)", protein: 0.8, carbs: 5.7, fat: 0.2 },
+            { id: 71, name: "Asparagi (crudi)", protein: 2.2, carbs: 3.9, fat: 0.1 },
+            { id: 72, name: "Asparagi (cotti)", protein: 2.4, carbs: 4, fat: 0.2 },
+            
+            // Frutta secca e semi
+            { id: 73, name: "Mandorle", protein: 21, carbs: 22, fat: 49 },
+            { id: 74, name: "Noci", protein: 15, carbs: 14, fat: 65 },
+            { id: 75, name: "Nocciole", protein: 15, carbs: 17, fat: 61 },
+            { id: 76, name: "Pistacchi", protein: 20, carbs: 28, fat: 45 },
+            { id: 77, name: "Arachidi", protein: 26, carbs: 16, fat: 49 },
+            { id: 78, name: "Semi di chia", protein: 17, carbs: 42, fat: 31 },
+            { id: 79, name: "Semi di lino", protein: 18, carbs: 29, fat: 42 },
+            { id: 80, name: "Semi di girasole", protein: 21, carbs: 20, fat: 51 },
+            
+            // Legumi
+            { id: 81, name: "Fagioli borlotti (crudi)", protein: 23, carbs: 60, fat: 1.5 },
+            { id: 82, name: "Fagioli borlotti (cotti)", protein: 9, carbs: 23, fat: 0.5 },
+            { id: 83, name: "Ceci (crudi)", protein: 19, carbs: 61, fat: 6 },
+            { id: 84, name: "Ceci (cotti)", protein: 8.9, carbs: 27, fat: 2.6 },
+            { id: 85, name: "Lenticchie (crude)", protein: 25, carbs: 60, fat: 1 },
+            { id: 86, name: "Lenticchie (cotte)", protein: 9, carbs: 20, fat: 0.4 },
+            { id: 87, name: "Piselli (crudi)", protein: 5.4, carbs: 14, fat: 0.4 },
+            { id: 88, name: "Piselli (cotti)", protein: 5.4, carbs: 14, fat: 0.4 },
+            { id: 89, name: "Soia (cruda)", protein: 36, carbs: 30, fat: 20 },
+            { id: 90, name: "Soia (cotta)", protein: 16, carbs: 10, fat: 9 },
+            
+            // Altri
+            { id: 91, name: "Avocado", protein: 2, carbs: 9, fat: 15 },
+            { id: 92, name: "Olio d'oliva", protein: 0, carbs: 0, fat: 100 },
+            { id: 93, name: "Burro", protein: 0.9, carbs: 0.1, fat: 81 },
+            { id: 94, name: "Cioccolato fondente 70%", protein: 7.8, carbs: 45, fat: 41 },
+            { id: 95, name: "Miele", protein: 0.3, carbs: 82, fat: 0 },
+            { id: 96, name: "Marmellata", protein: 0.3, carbs: 69, fat: 0.1 }
+        ];
+
+        // Inizializza localStorage
+        function initializeLocalStorage() {
+            const DB_VERSION = 2; // Incrementa per forzare aggiornamento
+            const currentVersion = localStorage.getItem('dbVersion');
+            
+            // Se non esiste il database o la versione è diversa, lo inizializza/aggiorna
+            if (!localStorage.getItem('foodDatabase') || currentVersion !== DB_VERSION.toString()) {
+                localStorage.setItem('foodDatabase', JSON.stringify(defaultFoodDatabase));
+                localStorage.setItem('dbVersion', DB_VERSION.toString());
+                console.log('Database aggiornato alla versione ' + DB_VERSION);
+            }
+            
+            // Se non esistono i consumati di oggi, inizializza array vuoto
+            if (!localStorage.getItem('consumedToday')) {
+                localStorage.setItem('consumedToday', JSON.stringify([]));
+            }
+        }
+
+        // Carica dati da localStorage
+        function loadData() {
+            return {
+                foodDatabase: JSON.parse(localStorage.getItem('foodDatabase') || '[]'),
+                consumedToday: JSON.parse(localStorage.getItem('consumedToday') || '[]')
+            };
+        }
+
+        // Salva dati in localStorage
+        function saveData() {
+            localStorage.setItem('foodDatabase', JSON.stringify(foodDatabase));
+            localStorage.setItem('consumedToday', JSON.stringify(consumedToday));
+        }
+
+        // Inizializzazione
+        function init() {
+            initializeLocalStorage();
+            const data = loadData();
+            foodDatabase = data.foodDatabase;
+            consumedToday = data.consumedToday;
+            filteredFoods = [...foodDatabase];
+            
+            // Controlla se il database ha le distinzioni crudo/cotto
+            const hasRawCooked = foodDatabase.some(f => f.name.includes('(crudo)') || f.name.includes('(cotto)'));
+            if (!hasRawCooked && foodDatabase.length > 0) {
+                // Mostra avviso se il database è vecchio
+                setTimeout(() => {
+                    if (confirm('⚠️ Il tuo database alimenti non include le distinzioni crudo/cotto. Vuoi aggiornarlo ora per avere valori nutrizionali più precisi?')) {
+                        window.resetDatabase();
+                    }
+                }, 500);
+            }
+            
+            renderFoodList();
+            renderConsumedList();
+            updateStats();
+        }
+
+        // Calcola calorie
+        function calculateCalories(protein, carbs, fat) {
+            return Math.round(protein * 4 + carbs * 4 + fat * 9);
+        }
+
+        // Cerca alimenti
+        window.searchFoods = function() {
+            const searchTerm = document.getElementById('searchFood').value.toLowerCase();
+            if (searchTerm === '') {
+                filteredFoods = [...foodDatabase];
+            } else {
+                filteredFoods = foodDatabase.filter(food => 
+                    food.name.toLowerCase().includes(searchTerm)
+                );
+            }
+            renderFoodList();
+        }
+
+        // Renderizza lista alimenti
+        function renderFoodList() {
+            const foodList = document.getElementById('foodList');
+            foodList.innerHTML = '';
+            
+            filteredFoods.forEach(food => {
+                const calories = calculateCalories(food.protein, food.carbs, food.fat);
+                const foodItem = document.createElement('div');
+                foodItem.className = 'food-item';
+                foodItem.innerHTML = `
+                    <div class="food-info">
+                        <div class="food-name">${food.name}</div>
+                        <div class="food-macros">
+                            P: ${food.protein}g | C: ${food.carbs}g | G: ${food.fat}g | 
+                            <span style="color: #fbbf24; font-weight: bold;">${calories} cal</span>
+                        </div>
+                    </div>
+                    <div class="food-actions">
+                        <button class="btn btn-warning btn-small" onclick="window.editFood(${food.id})">✏️</button>
+                        <button class="btn btn-danger btn-small" onclick="window.deleteFood(${food.id})">🗑️</button>
+                    </div>
+                `;
+                foodList.appendChild(foodItem);
+            });
+        }
+
+        // Renderizza lista consumati
+        function renderConsumedList() {
+            const consumedList = document.getElementById('consumedList');
+            consumedList.innerHTML = '';
+            
+            if (consumedToday.length === 0) {
+                consumedList.innerHTML = '<p style="text-align: center; color: var(--text-dim);">Nessun alimento consumato oggi</p>';
+                return;
+            }
+            
+            consumedToday.forEach((item, index) => {
+                const food = foodDatabase.find(f => f.id === item.foodId);
+                if (!food) return;
+                
+                const factor = item.quantity / 100;
+                const calories = calculateCalories(
+                    food.protein * factor,
+                    food.carbs * factor,
+                    food.fat * factor
+                );
+                
+                const consumedItem = document.createElement('div');
+                consumedItem.className = 'consumed-item';
+                consumedItem.innerHTML = `
+                    <div>
+                        <div style="font-weight: bold;">${food.name}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-dim);">
+                            ${item.time ? item.time + ' - ' : ''}${item.quantity}g | ${calories} cal
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="window.removeConsumed(${index})">❌</button>
+                `;
+                consumedList.appendChild(consumedItem);
+            });
+        }
+
+        // Aggiorna statistiche
+        function updateStats() {
+            let totalProtein = 0;
+            let totalCarbs = 0;
+            let totalFat = 0;
+            
+            consumedToday.forEach(item => {
+                const food = foodDatabase.find(f => f.id === item.foodId);
+                if (!food) return;
+                
+                const factor = item.quantity / 100;
+                totalProtein += food.protein * factor;
+                totalCarbs += food.carbs * factor;
+                totalFat += food.fat * factor;
+            });
+            
+            const totalCalories = calculateCalories(totalProtein, totalCarbs, totalFat);
+            
+            document.getElementById('totalCalories').textContent = totalCalories;
+            document.getElementById('totalProtein').textContent = Math.round(totalProtein) + 'g';
+            document.getElementById('totalCarbs').textContent = Math.round(totalCarbs) + 'g';
+            document.getElementById('totalFat').textContent = Math.round(totalFat) + 'g';
+        }
+
+        // Modal functions
+        window.openAddFoodModal = function() {
+            editingFoodId = null;
+            document.getElementById('modalTitle').textContent = 'Aggiungi Alimento';
+            document.getElementById('foodName').value = '';
+            document.getElementById('foodState').value = '';
+            document.getElementById('foodProtein').value = '';
+            document.getElementById('foodCarbs').value = '';
+            document.getElementById('foodFat').value = '';
+            document.getElementById('foodModal').classList.add('active');
+        }
+
+        window.editFood = function(id) {
+            const food = foodDatabase.find(f => f.id === id);
+            if (!food) return;
+            
+            editingFoodId = id;
+            document.getElementById('modalTitle').textContent = 'Modifica Alimento';
+            document.getElementById('foodName').value = food.name;
+            document.getElementById('foodState').value = 'altro'; // default per alimenti esistenti
+            document.getElementById('foodProtein').value = food.protein;
+            document.getElementById('foodCarbs').value = food.carbs;
+            document.getElementById('foodFat').value = food.fat;
+            document.getElementById('foodModal').classList.add('active');
+        }
+
+        window.saveFood = function() {
+            const name = document.getElementById('foodName').value.trim();
+            const state = document.getElementById('foodState').value;
+            const protein = parseFloat(document.getElementById('foodProtein').value) || 0;
+            const carbs = parseFloat(document.getElementById('foodCarbs').value) || 0;
+            const fat = parseFloat(document.getElementById('foodFat').value) || 0;
+            
+            if (!name) {
+                alert('Inserisci il nome dell\'alimento');
+                return;
+            }
+            
+            // Aggiungi stato al nome se selezionato
+            let fullName = name;
+            if (state === 'crudo') {
+                fullName = name + ' (crudo)';
+            } else if (state === 'cotto') {
+                fullName = name + ' (cotto)';
+            }
+            
+            if (editingFoodId) {
+                const index = foodDatabase.findIndex(f => f.id === editingFoodId);
+                if (index !== -1) {
+                    foodDatabase[index] = { id: editingFoodId, name: fullName, protein, carbs, fat };
+                }
+            } else {
+                const newId = Math.max(...foodDatabase.map(f => f.id), 0) + 1;
+                foodDatabase.push({ id: newId, name: fullName, protein, carbs, fat });
+            }
+            
+            saveData();
+            filteredFoods = [...foodDatabase];
+            document.getElementById('searchFood').value = '';
+            renderFoodList();
+            window.closeModal('foodModal');
+        }
+
+        window.deleteFood = function(id) {
+            if (confirm('Vuoi eliminare questo alimento?')) {
+                foodDatabase = foodDatabase.filter(f => f.id !== id);
+                filteredFoods = foodDatabase.filter(f => 
+                    f.name.toLowerCase().includes(document.getElementById('searchFood').value.toLowerCase())
+                );
+                saveData();
+                renderFoodList();
+            }
+        }
+
+        window.openAddConsumedModal = function() {
+            const select = document.getElementById('consumeFood');
+            select.innerHTML = '';
+            
+            // Ordina gli alimenti alfabeticamente
+            const sortedFoods = [...foodDatabase].sort((a, b) => a.name.localeCompare(b.name));
+            
+            sortedFoods.forEach(food => {
+                const option = document.createElement('option');
+                option.value = food.id;
+                option.textContent = food.name;
+                select.appendChild(option);
+            });
+            
+            document.getElementById('consumeQuantity').value = 100;
+            document.getElementById('consumeModal').classList.add('active');
+            
+            // Aggiorna anteprima calorie
+            window.updateCaloriePreview();
+        }
+
+        window.updateCaloriePreview = function() {
+            const foodId = parseInt(document.getElementById('consumeFood').value);
+            const quantity = parseFloat(document.getElementById('consumeQuantity').value) || 0;
+            
+            if (!foodId || quantity <= 0) {
+                document.getElementById('caloriePreview').textContent = '-';
+                return;
+            }
+            
+            const food = foodDatabase.find(f => f.id === foodId);
+            if (!food) {
+                document.getElementById('caloriePreview').textContent = '-';
+                return;
+            }
+            
+            const factor = quantity / 100;
+            const calories = calculateCalories(
+                food.protein * factor,
+                food.carbs * factor,
+                food.fat * factor
+            );
+            
+            document.getElementById('caloriePreview').textContent = calories + ' calorie';
+        }
+
+        window.addConsumed = function() {
+            const foodId = parseInt(document.getElementById('consumeFood').value);
+            const quantity = parseFloat(document.getElementById('consumeQuantity').value);
+            
+            if (!quantity || quantity <= 0) {
+                alert('Inserisci una quantità valida');
+                return;
+            }
+            
+            // Aggiungi con timestamp
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ':' + 
+                        now.getMinutes().toString().padStart(2, '0');
+            
+            consumedToday.push({ 
+                foodId, 
+                quantity,
+                time: time
+            });
+            
+            saveData();
+            renderConsumedList();
+            updateStats();
+            window.closeModal('consumeModal');
+        }
+
+        window.removeConsumed = function(index) {
+            consumedToday.splice(index, 1);
+            saveData();
+            renderConsumedList();
+            updateStats();
+        }
+
+        window.resetDatabase = function() {
+            if (confirm('Vuoi ripristinare il database degli alimenti con tutti i valori aggiornati (crudo/cotto)? I tuoi alimenti personalizzati verranno persi ma i pasti di oggi rimarranno.')) {
+                localStorage.setItem('foodDatabase', JSON.stringify(defaultFoodDatabase));
+                localStorage.setItem('dbVersion', '2');
+                
+                // Ricarica i dati
+                const data = loadData();
+                foodDatabase = data.foodDatabase;
+                filteredFoods = [...foodDatabase];
+                
+                // Aggiorna la visualizzazione
+                renderFoodList();
+                alert('Database aggiornato con successo! Ora troverai le distinzioni crudo/cotto per tutti gli alimenti.');
+            }
+        }
+
+        window.resetDay = function() {
+            if (confirm('Vuoi azzerare tutti gli alimenti consumati oggi?')) {
+                consumedToday = [];
+                saveData();
+                renderConsumedList();
+                updateStats();
+            }
+        }
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Chiudi modal cliccando fuori
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Inizializza l'app
+        init();
+    </script>
+</body>
+</html>
