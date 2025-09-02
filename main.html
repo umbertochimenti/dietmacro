@@ -262,11 +262,17 @@
         .consumed-item {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .consumed-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
         }
 
         .quantity-input {
@@ -350,19 +356,19 @@
 
         <div class="stats-container">
             <div class="stat-card">
-                <div class="stat-value" id="totalCalories">0</div>
+                <div class="stat-value" id="totalCalories" style="color: #fbbf24;">0</div>
                 <div class="stat-label">Calorie Totali</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="totalProtein">0g</div>
+                <div class="stat-value" id="totalProtein" style="color: #ef4444;">0g</div>
                 <div class="stat-label">Proteine</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="totalCarbs">0g</div>
+                <div class="stat-value" id="totalCarbs" style="color: #3b82f6;">0g</div>
                 <div class="stat-label">Carboidrati</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="totalFat">0g</div>
+                <div class="stat-value" id="totalFat" style="color: #10b981;">0g</div>
                 <div class="stat-label">Grassi</div>
             </div>
         </div>
@@ -449,9 +455,9 @@
                 <label>Quantità (grammi)</label>
                 <input type="number" id="consumeQuantity" step="1" value="100" placeholder="100" onkeyup="window.updateCaloriePreview()" onchange="window.updateCaloriePreview()">
             </div>
-            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="text-align: center; color: var(--text-dim);">Valore nutrizionale per questa quantità:</div>
-                <div id="caloriePreview" style="text-align: center; font-size: 1.2rem; font-weight: bold; margin-top: 5px;">-</div>
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="text-align: center; color: var(--text-dim); font-size: 0.9rem;">Valore nutrizionale per questa quantità:</div>
+                <div id="caloriePreview" style="text-align: center; margin-top: 8px;">-</div>
             </div>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-success" onclick="window.addConsumed()">Aggiungi</button>
@@ -703,16 +709,28 @@
                     food.fat * factor
                 );
                 
+                // Calcola i macro per la quantità consumata
+                const consumedProtein = Math.round(food.protein * factor * 10) / 10;
+                const consumedCarbs = Math.round(food.carbs * factor * 10) / 10;
+                const consumedFat = Math.round(food.fat * factor * 10) / 10;
+                
                 const consumedItem = document.createElement('div');
                 consumedItem.className = 'consumed-item';
                 consumedItem.innerHTML = `
-                    <div>
-                        <div style="font-weight: bold;">${food.name}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; margin-bottom: 3px;">${food.name}</div>
                         <div style="font-size: 0.85rem; color: var(--text-dim);">
-                            ${item.time ? item.time + ' - ' : ''}${item.quantity}g | ${calories} cal
+                            ${item.time ? '<span style="color: #60a5fa;">⏰ ' + item.time + '</span> • ' : ''}
+                            <span style="color: #a78bfa;">${item.quantity}g</span> • 
+                            <span style="color: #fbbf24; font-weight: bold;">${calories} cal</span>
+                        </div>
+                        <div style="font-size: 0.8rem; margin-top: 4px;">
+                            <span style="color: #ef4444;">P: ${consumedProtein}g</span> • 
+                            <span style="color: #3b82f6;">C: ${consumedCarbs}g</span> • 
+                            <span style="color: #10b981;">G: ${consumedFat}g</span>
                         </div>
                     </div>
-                    <button class="btn btn-danger btn-small" onclick="window.removeConsumed(${index})">❌</button>
+                    <button class="btn btn-danger btn-small" onclick="window.removeConsumed(${index})" style="align-self: center;">❌</button>
                 `;
                 consumedList.appendChild(consumedItem);
             });
@@ -842,13 +860,13 @@
             const quantity = parseFloat(document.getElementById('consumeQuantity').value) || 0;
             
             if (!foodId || quantity <= 0) {
-                document.getElementById('caloriePreview').textContent = '-';
+                document.getElementById('caloriePreview').innerHTML = '-';
                 return;
             }
             
             const food = foodDatabase.find(f => f.id === foodId);
             if (!food) {
-                document.getElementById('caloriePreview').textContent = '-';
+                document.getElementById('caloriePreview').innerHTML = '-';
                 return;
             }
             
@@ -859,7 +877,19 @@
                 food.fat * factor
             );
             
-            document.getElementById('caloriePreview').textContent = calories + ' calorie';
+            // Calcola i macro per la quantità selezionata
+            const consumedProtein = Math.round(food.protein * factor * 10) / 10;
+            const consumedCarbs = Math.round(food.carbs * factor * 10) / 10;
+            const consumedFat = Math.round(food.fat * factor * 10) / 10;
+            
+            document.getElementById('caloriePreview').innerHTML = `
+                <div style="font-size: 1.4rem; color: #fbbf24; margin-bottom: 8px; font-weight: bold;">${calories} calorie</div>
+                <div style="font-size: 0.95rem;">
+                    <span style="color: #ef4444;">P: ${consumedProtein}g</span> • 
+                    <span style="color: #3b82f6;">C: ${consumedCarbs}g</span> • 
+                    <span style="color: #10b981;">G: ${consumedFat}g</span>
+                </div>
+            `;
         }
 
         window.addConsumed = function() {
